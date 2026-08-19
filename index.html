@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HandWriteAR · Writing Quest</title>
+  <style>
+    :root { --ink:#24314d; --purple:#7057e9; --pink:#fb789e; --aqua:#53d9cc; --sun:#ffd45d; --paper:#fffdf7; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); font-family:ui-rounded, "Nunito", system-ui, sans-serif; background:#f2efff; }
+    .shell { max-width:1120px; margin:auto; padding:24px; }
+    header { display:flex; justify-content:space-between; align-items:center; gap:18px; margin-bottom:22px; }
+    .brand { display:flex; align-items:center; gap:12px; font-weight:900; font-size:1.25rem; letter-spacing:-.03em; }
+    .brand-mark { width:44px; height:44px; display:grid; place-items:center; border-radius:15px; background:var(--purple); color:white; font-size:1.45rem; box-shadow:0 5px 0 #5541bf; }
+    .stars { color:#e9a600; font-weight:800; white-space:nowrap; }
+    main { display:grid; grid-template-columns:minmax(0,1.45fr) minmax(260px,.8fr); gap:22px; }
+    .stage, .guide { background:var(--paper); border-radius:28px; box-shadow:0 12px 32px rgba(68,50,130,.14); overflow:hidden; }
+    .stage-top { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:16px 20px; background:#fff; }
+    .stage-top h1 { margin:0; font-size:1.15rem; }
+    .state { display:flex; align-items:center; gap:8px; border-radius:999px; padding:8px 12px; background:#efeafd; font-size:.8rem; font-weight:900; }
+    .dot { width:9px; height:9px; border-radius:50%; background:#8c85a1; }
+    .state.tracking { background:#ddf8f4; color:#16675e; }.state.tracking .dot { background:var(--aqua); box-shadow:0 0 0 4px rgba(83,217,204,.25); }
+    .stage-body { position:relative; aspect-ratio:4/3; background:#25213f; overflow:hidden; }
+    video, #drawing, #guideLetter { position:absolute; inset:0; width:100%; height:100%; }
+    video { object-fit:cover; transform:scaleX(-1); opacity:.78; }
+    #drawing { pointer-events:none; }
+    #guideLetter { display:grid; place-items:center; color:rgba(255,255,255,.32); font:900 clamp(12rem,40vw,22rem)/1 Georgia,serif; pointer-events:none; }
+    .camera-message { position:absolute; inset:0; display:grid; place-items:center; color:white; text-align:center; padding:36px; font-weight:800; background:linear-gradient(135deg,#5544a6,#293c7c); }
+    .camera-message small { display:block; margin-top:8px; font-weight:500; opacity:.8; }
+    .toolbar { display:flex; gap:10px; align-items:center; justify-content:space-between; padding:14px 18px; background:#fff; }
+    button { border:0; border-radius:13px; padding:10px 14px; cursor:pointer; color:var(--ink); font:800 .9rem inherit; background:#f2efff; }
+    button.primary { background:var(--purple); color:white; box-shadow:0 3px 0 #5541bf; } button:hover { transform:translateY(-1px); }
+    .guide { padding:22px; }.eyebrow { color:var(--purple); text-transform:uppercase; font-weight:900; font-size:.73rem; letter-spacing:.09em; }.guide h2 { margin:5px 0 9px; font-size:1.55rem; line-height:1.05; }.guide p { margin:0; color:#65708a; line-height:1.5; }
+    .steps { margin:20px 0; display:grid; gap:11px; }.step { display:flex; gap:12px; align-items:center; font-weight:800; }.step-icon { width:43px; height:43px; display:grid; place-items:center; border-radius:14px; background:#f2efff; font-size:1.3rem; }.step.active .step-icon { background:#ddf8f4; }.step small { display:block; color:#748099; font-weight:600; margin-top:2px; }
+    .tip { padding:14px; border-radius:16px; background:#fff4cf; color:#765b00; font-weight:700; line-height:1.35; font-size:.9rem; }
+    @media (max-width:760px) { .shell { padding:14px; } main { grid-template-columns:1fr; }.guide { order:-1; }.stars { display:none; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header><div class="brand"><span class="brand-mark">✍</span> HandWriteAR</div><div class="stars">★ ★ ★ &nbsp; Writing Quest</div></header>
+    <main>
+      <section class="stage" aria-label="Handwriting camera and canvas">
+        <div class="stage-top"><h1>Trace the letter <strong id="targetLabel">A</strong></h1><div id="stateBadge" class="state"><span class="dot"></span><span id="stateText">PAUSED</span></div></div>
+        <div class="stage-body"><video id="webcam" playsinline></video><canvas id="drawing"></canvas><div id="guideLetter">A</div><div id="cameraMessage" class="camera-message">Ready for a writing adventure?<small>Allow camera access, then show an open hand to begin.</small></div></div>
+        <div class="toolbar"><span id="feedback" aria-live="polite">Show an open hand to start.</span><div><button id="clearButton" type="button">Clear</button> <button id="cameraButton" class="primary" type="button">Start camera</button></div></div>
+      </section>
+      <aside class="guide"><div class="eyebrow">How the magic works</div><h2>Draw when you mean it.</h2><p>Your hand controls the pencil—no accidental scribbles.</p>
+        <div class="steps"><div id="openStep" class="step"><span class="step-icon">🖐️</span><span>Open your hand<small>Start your writing turn</small></span></div><div id="drawStep" class="step"><span class="step-icon">☝️</span><span>Point with your index finger<small>Trace the letter in the air</small></span></div><div id="fistStep" class="step"><span class="step-icon">✊</span><span>Make a fist<small>Pause and finish the stroke</small></span></div></div>
+        <div class="tip">✨ Tiny shakes are filtered out, so your line stays calm and clear.</div>
+      </aside>
+    </main>
+  </div>
+  <script type="module">
+    const video=document.querySelector('#webcam'), canvas=document.querySelector('#drawing'), ctx=canvas.getContext('2d');
+    const message=document.querySelector('#cameraMessage'), stateBadge=document.querySelector('#stateBadge'), stateText=document.querySelector('#stateText'), feedback=document.querySelector('#feedback');
+    const steps={open:document.querySelector('#openStep'),draw:document.querySelector('#drawStep'),fist:document.querySelector('#fistStep')};
+    let detector, running=false, state='PAUSED', lastVideoTime=-1, previous=null, raf;
+    const SMOOTHING=.32, JITTER=5;
+    function setState(next) { if(state===next) return; state=next; previous=null; const tracking=state==='TRACKING'; stateBadge.classList.toggle('tracking',tracking); stateText.textContent=tracking?'TRACKING':'PAUSED'; feedback.textContent=tracking?'Great! Point your index finger and draw.':'Paused. Open your hand for another stroke.'; steps.open.classList.toggle('active',tracking); steps.draw.classList.toggle('active',tracking); steps.fist.classList.toggle('active',!tracking); }
+    function resize(){ const r=canvas.getBoundingClientRect(), d=devicePixelRatio; canvas.width=r.width*d; canvas.height=r.height*d; ctx.setTransform(d,0,0,d,0,0); ctx.lineCap='round';ctx.lineJoin='round'; }
+    window.addEventListener('resize',resize); document.querySelector('#clearButton').onclick=()=>{ctx.clearRect(0,0,canvas.width,canvas.height);previous=null};
+    function distance(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
+    function isFist(l){const wrist=l[0]; return [8,12,16,20].every(i=>distance(l[i],wrist)<distance(l[i-2],wrist)*1.28)}
+    function isOpen(l){const wrist=l[0]; return [8,12,16,20].filter(i=>distance(l[i],wrist)>distance(l[i-2],wrist)*1.45).length>=3}
+    function drawFinger(point){ const r=canvas.getBoundingClientRect(), raw={x:(1-point.x)*r.width,y:point.y*r.height}; const p=previous?{x:previous.x+(raw.x-previous.x)*SMOOTHING,y:previous.y+(raw.y-previous.y)*SMOOTHING}:raw; if(previous && Math.hypot(p.x-previous.x,p.y-previous.y)>=JITTER){ctx.strokeStyle='#fb789e';ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(previous.x,previous.y);ctx.lineTo(p.x,p.y);ctx.stroke()} previous=p; }
+    async function predict(){ if(!running)return; if(video.currentTime!==lastVideoTime){lastVideoTime=video.currentTime; const result=detector.detectForVideo(video,performance.now()); const l=result.landmarks?.[0]; if(l){ if(isFist(l)) setState('PAUSED'); else if(isOpen(l)) setState('TRACKING'); if(state==='TRACKING') drawFinger(l[8]); } } raf=requestAnimationFrame(predict); }
+    document.querySelector('#cameraButton').onclick=async()=>{
+      const button=document.querySelector('#cameraButton');
+      try {
+        if (!navigator.mediaDevices?.getUserMedia) throw new Error('Camera access requires a secure HTTPS page.');
+        button.textContent='Allow camera…';
+        // This runs directly from the learner's button click, so the browser shows its camera-permission prompt first.
+        const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});
+        video.srcObject=stream; await video.play(); resize(); message.style.display='none'; button.textContent='Loading writing tools…';
+        const { FilesetResolver, HandLandmarker }=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22');
+        const vision=await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/wasm');
+        detector=await HandLandmarker.createFromOptions(vision,{baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task'},runningMode:'VIDEO',numHands:1});
+        button.textContent='Camera on'; running=true; predict();
+      } catch(error) {
+        button.textContent='Start camera';
+        const insecure=location.protocol!=='https:' && location.hostname!=='localhost';
+        message.style.display='grid';
+        message.innerHTML=insecure
+          ? 'Camera access needs a secure page.<small>Open the GitHub Pages HTTPS link (not the downloaded HTML file), then tap Start camera.</small>'
+          : 'Camera access is needed to play.<small>Select Allow in your browser prompt, then try again.</small>';
+        console.error(error);
+      }
+    };
+  </script>
+</body>
+</html>
